@@ -1,0 +1,108 @@
+#Este programa me suma dos numeros elevados a la dos y los suma. A partir de esto, hay que sacarles raiz.
+
+.data
+pi:     .float  3.14
+degree: .float  180.0
+
+prompt: .asciiz "\nEnter a: "
+prompt2:.asciiz "\nEnter b: "
+blank:  .asciiz " "
+newl:   .asciiz "\n"
+Hipotenusa: .asciiz "\nLa hipotenusa es:"
+
+.text
+
+main:
+
+
+	la $a0, prompt		#print the directions to screen
+	addiu $v0,4       
+
+        la      $a0,prompt          # prompt user for a
+        addiu      $v0,4               # print string
+        syscall
+        
+        addiu      $v0,6               # read single
+        syscall                     # x stored to f0
+
+	mov.s  $f2,$f0
+
+	la      $a0,prompt2         # prompt user for b
+        addiu      $v0,4               # print string
+        syscall
+        
+        addiu      $v0,6               # read single
+        syscall 
+        
+        # evaluate a and b to get c
+
+        mul.s   $f2,$f2,$f2         # square a
+       
+        mul.s   $f0,$f0,$f0         # square b
+
+	add.s   $f2,$f2,$f0	    # add a^2 and b^2
+        
+        
+        # print the result
+        mov.s   $f12,$f2            # $f12 = argument
+        
+#	li      $v0,2               # print single
+ #       syscall
+
+  #      la      $a0,newl            # new line
+   #     li      $v0,4               # print string
+    #    syscall
+
+#Hay que guardar el valor de la suma de los catetos al cuadrado en la pila y pasarselos a la funcion raiz.
+	addi $sp, $sp, -4
+	s.s $f12, 0($sp)
+	jal raiz #se define que la función recibe los parámetros por la pila y por ahí devuelve el resultado
+	l.s $f12, 0($sp)
+	addi $sp, $sp, 4
+	
+#imprime el valor de la hipotenusa.
+	addiu $v0, 4
+	la $a0, Hipotenusa
+	syscall
+
+	addiu $v0, 2
+	syscall
+
+        j main
+raiz:
+	addi $sp,$sp, -16
+	s.s $f0, 12($sp) 
+	s.s $f1, 8($sp)
+	s.s $f2, 4($sp)
+	s.s $f3, 0($sp)
+
+	l.s $f0, 16($sp) #$f0=N
+
+	addi $t0, $0, 2
+	mtc1 $t0, $f1 #se transfiere un valor de un registro entero a uno flotante
+	cvt.s.w $f1, $f1  #f1=2 Convierte un valor entero en un registro punto flotante en un valor en punto flotante	
+
+	div.s $f2, $f0, $f1 #$f2=x=N/2 valor inicial de la semilla
+
+	addi $t0, $0, 20 #numero de iteraciones
+
+iterRaiz:
+	div.s $f3, $f0, $f2 #$f3=N/x
+	add.s $f3, $f2, $f3 #$f3=x+N/x
+	div.s $f2, $f3, $f1 ##$f2=(x+N/x)/2
+
+	beq $t0, $0, retRaiz
+	addi $t0, $t0, -1
+	j iterRaiz
+
+retRaiz:
+	s.s $f2, 16($sp)
+
+	l.s $f3, 0($sp)
+	l.s $f2, 4($sp)
+	l.s $f1, 8($sp)
+	l.s $f0, 12($sp) 
+	addi $sp,$sp, 16
+	jr $ra	
+
+
