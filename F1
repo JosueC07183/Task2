@@ -1,74 +1,103 @@
 #Este programa me suma dos numeros elevados a la dos y los suma. A partir de esto, hay que sacarles raiz.
 
 .data
-pi:     .float  3.14
-degree: .float  180.0
-
-prompt: .asciiz "\nEnter a: "
+pi:.float  3.14
+degree:.float  180.0
+sin_cos_tan_Msg: .asciiz"\nenter the angle in degree: "
+ToRadian:.float 0.01745	# the value of (PI / 180)
+two:.float 2.0
+one:.float 1.0
+negative:.float -1.0
+check: .float 20.0	# loop iterations
+zeroValue:.float 0.0
+prompt:.asciiz "\nEnter a: "
 prompt2:.asciiz "\nEnter b: "
-blank:  .asciiz " "
-newl:   .asciiz "\n"
-Hipotenusa: .asciiz "\nLa hipotenusa es:"
-
+blank:.asciiz " "
+newl:.asciiz "\n"
+Hipotenusa:.asciiz "\nLa hipotenusa es:"
+Angle:.asciiz "\nEl seno del angulo opuesto al cateto menor es: "
+Angle_2:.asciiz "\nEl coseno del angulo opuesto al cateto menor es: "
 .text
 
 main:
 
-
-	la $a0, prompt		#print the directions to screen
-	addiu $v0,4       
-
-        la      $a0,prompt          # prompt user for a
-        addiu      $v0,4               # print string
-        syscall
+        la $a0,prompt          # prompt user for a        
+        addiu $v0,$0,4               # print string
+        syscall        
         
-        addiu      $v0,6               # read single
+        addiu $v0,$0,6               # read single
         syscall                     # x stored to f0
-
-	mov.s  $f2,$f0
-
-	la      $a0,prompt2         # prompt user for b
-        addiu      $v0,4               # print string
+	
+	mov.s $f1,$f0
+	
+	
+	#Se tiene que tomar esto para  y ponerlo despues de que se hayan leído los dos numeros y si son 0, pues que termine el programa, sino que siga pidiendo numeros
+	sub.s $f5, $f5, $f5
+	c.eq.s $f0,$f5 						#Aqui se chequea que el entero sea mayor o igual a cero.
+#	beq $t0, $0, Error
+	bc1t Error 						#Si el numero es negativo entonces se muestra el mensaje en InputError.
+#	add.s $f5, $v0, $0 						#Pasamos el entero recibido por terminal a $s0
+ #       addiu $t0,$v0,0 
+	
+	
+	la $a0,prompt2         # prompt user for b
+        addiu $v0,$0,4               # print string
         syscall
         
-        addiu      $v0,6               # read single
+        addiu $v0,$0,6               # read single
         syscall 
-        
+
+       	mov.s $f2,$f0
+       	
+       	
         # evaluate a and b to get c
 
-        mul.s   $f2,$f2,$f2         # square a
+        mul.s $f3,$f1,$f1         # square a
        
-        mul.s   $f0,$f0,$f0         # square b
+        mul.s $f4,$f2,$f2         # square b
 
-	add.s   $f2,$f2,$f0	    # add a^2 and b^2
+	add.s $f5,$f4,$f3	    # add a^2 and b^2
         
         
         # print the result
-        mov.s   $f12,$f2            # $f12 = argument
-        
-#	li      $v0,2               # print single
- #       syscall
+       
+        mov.s   $f12,$f5            # $f12 = argument
 
-  #      la      $a0,newl            # new line
-   #     li      $v0,4               # print string
-    #    syscall
-
+	
 #Hay que guardar el valor de la suma de los catetos al cuadrado en la pila y pasarselos a la funcion raiz.
 	addi $sp, $sp, -4
 	s.s $f12, 0($sp)
 	jal raiz #se define que la función recibe los parámetros por la pila y por ahí devuelve el resultado
 	l.s $f12, 0($sp)
 	addi $sp, $sp, 4
-	
+
 #imprime el valor de la hipotenusa.
-	addiu $v0, 4
+	addiu $v0,$0, 4
 	la $a0, Hipotenusa
 	syscall
 
-	addiu $v0, 2
+	addiu $v0,$0, 2
+	syscall
+	
+#Se hace la division del cateto menor y la hipotenusa.
+	div.s $f0,$f1,$f12 
+#Este bloque de codigo indica que cateto es menor y asi determinar si se calcula el seno o el coseno del angulo
+#El calculo del seno si esta trabajando.
+	addi $sp,$sp,-4
+	s.s $f0, 0($sp)
+	jal Sin
+	l.s $f0, 0($sp)
+	addi $sp,$sp, 4	
+
+	addiu $v0,$0, 4
+	la $a0, Angle
+	syscall
+	
+	addiu $v0,$0, 2
 	syscall
 
-        j main
+	
+       j main
 raiz:
 	addi $sp,$sp, -16
 	s.s $f0, 12($sp) 
@@ -92,17 +121,115 @@ iterRaiz:
 	div.s $f2, $f3, $f1 ##$f2=(x+N/x)/2
 
 	beq $t0, $0, retRaiz
-	addi $t0, $t0, -1
+	addi $t0, $t0, -1	#Se van reduciendo las iteraciones.
 	j iterRaiz
 
 retRaiz:
 	s.s $f2, 16($sp)
-
 	l.s $f3, 0($sp)
 	l.s $f2, 4($sp)
 	l.s $f1, 8($sp)
 	l.s $f0, 12($sp) 
 	addi $sp,$sp, 16
-	jr $ra	
+	jr $ra
+
+fact:
+	addi $sp, $sp, -8	# adjust stack for 2 items
+	sw $ra, 4($sp)		# save the return address
+	sw $a0, 0($sp) 		# save the argument n
 
 
+	slti $t0,$a0,1		# test for n < 1
+	beq $t0,$zero,L1 	# if n >= 1, go to L1
+
+	addi $v0,$zero,1	# return 1
+	addi $sp,$sp,8		# pop 2 items off stack
+	jr $ra 			# return to caller
+
+	L1:
+	addi $a0, $a0, -1	# n >= 1: argument gets (n – 1)
+	jal fact 		# call fact with (n –1)
+
+	lw $a0, 0($sp)		# return from jal: restore argument n
+	lw $ra, 4($sp)		# restore the return address
+	addi $sp, $sp, 8 	# adjust stack pointer to pop 2 items
+
+	mul $v0,$a0,$v0		# return n * fact (n – 1)
+	jr $ra 			# return to the caller
+
+Sin:
+	lwc1 $f8, zeroValue         	#Load a float zero in coprocessor 1 to use it for float operations
+        addi $t5, $zero,5
+        addi $t6, $zero,6
+        addi $t7, $zero,7
+	lwc1 $f1, ToRadian          	#Load f1 with the value of PI which is 3.14
+     	mul.s $f12, $f0, $f1       		#Multiply the previous result with angle and then store it back in angle
+	add.s $f4, $f12, $f8               	#Store angle content into term variable, f4 is term 
+      	add.s $f28, $f8, $f4               	#Store term variable into lastValue, f5 is lastValue
+      	lwc1 $f21, one                  	#This represents f21: n 
+      	lwc1 $f11, one                    	#This will always represent 1
+      	addi $t0, $zero, 0               	#Ensure the register=zero so that we can use it as the loop counter, t0 is i
+              
+      	while5:                          	#While loop to calculate Taylor's Series
+        	bgt $t0, 20, exit5          	#If the value of $t0 which is the counter is bigger than 10 then it will go to Exit5 label
+           	lwc1 $f19, two
+           	mul.s $f24, $f21, $f19     	#multiply n with 2
+           	add.s $f27, $f24, $f11      #Use the previous result to add 1 
+           	mul.s $f30, $f27, $f21      	#Multiply the previous result with 2
+          	mul.s $f26, $f30, $f19     	#f26 is now the denominator
+              
+          	lwc1 $f13, negative
+           	mul.s $f18, $f4, $f13       	#Negative the term
+           	mul.s $f3, $f12, $f18       	#Multiply the term with angle
+           	mul.s $f3, $f3, $f12        	#Multiply angle ith previous result again
+           	div.s $f4, $f3, $f26        	#Divide the previous output over the denominator
+                                           
+          	add.s $f28, $f28, $f4          	#lastValue = lastValue + term;
+           	add.s $f21, $f11, $f21     	#Increments the value of n
+           	addi $t0, $t0, 1             	#Increments the value of counter
+           	j while5                     	#The flow jumps back to the while loop if the condition is fullfilled        
+        exit5:                          		#Return function result stored in $f5 which is lastValue 
+        
+       		jr $ra                        	#Returns to the function caller
+
+Cos:
+	#All of these are initial values to calculate the equations
+	lwc1 $f31, one 			# this is the counter 
+	lwc1 $f1, one
+	lwc1 $f2, two
+	lwc1 $f3, ToRadian		#The value of (PI/180) which is 0.01745
+	lwc1 $f8, negative			#The value -1
+	lwc1 $f9, one
+	lwc1 $f11, one			# $f11 has the sum (Result)
+	lwc1 $f14, check			#the number of iterations
+	
+	mul.s $f4, $f0, $f3			#convert the degree to radian
+	 
+	loop6:
+		mul.s $f5, $f4, $f4		#(x*x)
+	
+		#(2*i-1)
+		mul.s $f6, $f31, $f2		
+		sub.s $f6, $f6, $f1
+	
+		mul.s $f7, $f31, $f2 	#(2*i)
+	
+		# collecting them together to put them in R ($f5)
+		div.s $f5, $f5, $f6		
+		div.s $f5, $f5, $f7		
+		mul.s $f5, $f5, $f8		# put the negative sign 
+	
+		mul.s $f10, $f5, $f9		# t1 = R * t0  ($f10 = t1)
+		add.s $f11, $f11, $f10	# sum = sum+t1
+		mov.s $f9, $f10		# t0 = t1
+		add.s $f31, $f31, $f1	# counter++
+		c.eq.s $f31, $f14		# is i = 10
+		bc1t exit6			# if the previous condition is true branch to exit label
+		j loop6			# if the condition is false loop again from the (loop) label
+	
+	exit6:
+		jr $ra
+
+Error:							      #Aqui se termina el programa porque se escribio un cateto igual a 0.
+	addiu $v0,$0,10       						#Final del main para evitar recursión.
+        syscall	
