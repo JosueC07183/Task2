@@ -1,235 +1,388 @@
-#Este programa me suma dos numeros elevados a la dos y los suma. A partir de esto, hay que sacarles raiz.
+#Josue Salmeron Cordoba.
+#Este programa solicita dos catetos, si ambos valores son cero entonces el programa termina. Sino, imprime la hipotenusa, el arcseno del cateto menor, el seno y el coseno del triangulo
+#Nota: los valores los presenta en radianes.
 
-.data
-pi:.float  3.14
-degree:.float  180.0
-sin_cos_tan_Msg: .asciiz"\nenter the angle in degree: "
-ToRadian:.float 0.01745	# the value of (PI / 180)
-two:.float 2.0
-one:.float 1.0
-negative:.float -1.0
-check: .float 20.0	# loop iterations
-zeroValue:.float 0.0
-prompt:.asciiz "\nEnter a: "
-prompt2:.asciiz "\nEnter b: "
-blank:.asciiz " "
-newl:.asciiz "\n"
-Hipotenusa:.asciiz "\nLa hipotenusa es:"
-Angle:.asciiz "\nEl seno del angulo opuesto al cateto menor es: "
-Angle_2:.asciiz "\nEl coseno del angulo opuesto al cateto menor es: "
+.data				#Se cargan los mensajes que va a mostrar el programa.
+msg1: .asciiz "\nIngrese valor de a: "
+msg2: .asciiz "\nIngrese valor de b: "
+Hipo: .asciiz "\nEl valor de la hipotenusa es: "
+Arco_sine: .asciiz "\nEl arcoseno del triangulo es: "
+Sine: .asciiz "\nEl seno del triangulo es: "
+Cosine: .asciiz "\nEl coseno del triangulo es: "
+
 .text
+main:				# Funcion main que hace un jal al loop principal.
+	jal Loop		#Loop que se encarga de ejecutar todo el codigo implementado.
 
-main:
+Loop:				#Aqui se muestran los mensajes iniciales.
 
-        la $a0,prompt          # prompt user for a        
-        addiu $v0,$0,4               # print string
-        syscall        
+	la $a0,msg1          	#Se solicita el valor del primer cateto.
+        addiu $v0,$0,4          #Se le indica al sistema que se trata de un string.
+        syscall        		#Con syscall es posible mostrar el mensaje.
         
-        addiu $v0,$0,6               # read single
-        syscall                     # x stored to f0
+        addiu $v0,$0,6          #Se utiliza un 6 para indicarle al sistema que se trata de un float.
+        syscall                 #Con syscall se ejecuta la instruccion anterior.
+	mov.s $f1,$f0		#Se mueve el valor de a en $f0 a $f1. Por tanto, el cateto a es $f1.
 	
-	mov.s $f1,$f0
-	
-	
-	#Se tiene que tomar esto para  y ponerlo despues de que se hayan leído los dos numeros y si son 0, pues que termine el programa, sino que siga pidiendo numeros
-	sub.s $f5, $f5, $f5
-	c.eq.s $f0,$f5 						#Aqui se chequea que el entero sea mayor o igual a cero.
-#	beq $t0, $0, Error
-	bc1t Error 						#Si el numero es negativo entonces se muestra el mensaje en InputError.
-#	add.s $f5, $v0, $0 						#Pasamos el entero recibido por terminal a $s0
- #       addiu $t0,$v0,0 
-	
-	
-	la $a0,prompt2         # prompt user for b
-        addiu $v0,$0,4               # print string
-        syscall
+	la $a0,msg2         	#Se solicita el valor del segundo cateto.
+        addiu $v0,$0,4          #Se le indica al sistema que se trata de un string.
+        syscall			#Con syscall es posible mostrar el mensaje.
         
-        addiu $v0,$0,6               # read single
-        syscall 
-
-       	mov.s $f2,$f0
+        addiu $v0,$0,6          #Se utiliza un 6 para indicarle al sistema que se trata de un float.
+        syscall 		#Con syscall se ejecuta la instruccion anterior.
+       	mov.s $f2,$f0		#Se mueve el valor de a en $f0 a $f2. Por tanto, el cateto b es $f2.
        	
-       	
-        # evaluate a and b to get c
-
-        mul.s $f3,$f1,$f1         # square a
-       
-        mul.s $f4,$f2,$f2         # square b
-
-	add.s $f5,$f4,$f3	    # add a^2 and b^2
-        
-        
-        # print the result
-       
-        mov.s   $f12,$f5            # $f12 = argument
-
+	sub.s $f5, $f5, $f5	#Crear un cero flotante. Si los dos catetos son 0, el programa termina.
+	c.eq.s $f1,$f5 		#Aqui se chequea si el primer catero es cero.
+	c.eq.s $f2,$f5 		#Aqui se chequea si el segundo catero es cero.
+	bc1t Error       	#Si ambos catetos son cero, se brinca a la etiqueta Error para terminar el programa.
 	
-#Hay que guardar el valor de la suma de los catetos al cuadrado en la pila y pasarselos a la funcion raiz.
-	addi $sp, $sp, -4
-	s.s $f12, 0($sp)
-	jal raiz #se define que la función recibe los parámetros por la pila y por ahí devuelve el resultado
-	l.s $f12, 0($sp)
-	addi $sp, $sp, 4
-
-#imprime el valor de la hipotenusa.
-	addiu $v0,$0, 4
-	la $a0, Hipotenusa
-	syscall
-
-	addiu $v0,$0, 2
-	syscall
-	
-#Se hace la division del cateto menor y la hipotenusa.
-	div.s $f0,$f1,$f12 
-#Este bloque de codigo indica que cateto es menor y asi determinar si se calcula el seno o el coseno del angulo
-#El calculo del seno si esta trabajando.
-	addi $sp,$sp,-4
-	s.s $f0, 0($sp)
-	jal Sin
-	l.s $f0, 0($sp)
-	addi $sp,$sp, 4	
-
-	addiu $v0,$0, 4
-	la $a0, Angle
-	syscall
-	
-	addiu $v0,$0, 2
-	syscall
-
-	
-       j main
-raiz:
-	addi $sp,$sp, -16
-	s.s $f0, 12($sp) 
-	s.s $f1, 8($sp)
+	addi $sp, $sp, -8	#Aqui se reserva espacio en memoria para luego hacer uso de la funcion raiz.
 	s.s $f2, 4($sp)
-	s.s $f3, 0($sp)
-
-	l.s $f0, 16($sp) #$f0=N
-
-	addi $t0, $0, 2
-	mtc1 $t0, $f1 #se transfiere un valor de un registro entero a uno flotante
-	cvt.s.w $f1, $f1  #f1=2 Convierte un valor entero en un registro punto flotante en un valor en punto flotante	
-
-	div.s $f2, $f0, $f1 #$f2=x=N/2 valor inicial de la semilla
-
-	addi $t0, $0, 20 #numero de iteraciones
-
-iterRaiz:
-	div.s $f3, $f0, $f2 #$f3=N/x
-	add.s $f3, $f2, $f3 #$f3=x+N/x
-	div.s $f2, $f3, $f1 ##$f2=(x+N/x)/2
-
-	beq $t0, $0, retRaiz
-	addi $t0, $t0, -1	#Se van reduciendo las iteraciones.
-	j iterRaiz
-
-retRaiz:
-	s.s $f2, 16($sp)
-	l.s $f3, 0($sp)
-	l.s $f2, 4($sp)
-	l.s $f1, 8($sp)
-	l.s $f0, 12($sp) 
-	addi $sp,$sp, 16
-	jr $ra
-
-fact:
-	addi $sp, $sp, -8	# adjust stack for 2 items
-	sw $ra, 4($sp)		# save the return address
-	sw $a0, 0($sp) 		# save the argument n
-
-
-	slti $t0,$a0,1		# test for n < 1
-	beq $t0,$zero,L1 	# if n >= 1, go to L1
-
-	addi $v0,$zero,1	# return 1
-	addi $sp,$sp,8		# pop 2 items off stack
-	jr $ra 			# return to caller
-
-	L1:
-	addi $a0, $a0, -1	# n >= 1: argument gets (n – 1)
-	jal fact 		# call fact with (n –1)
-
-	lw $a0, 0($sp)		# return from jal: restore argument n
-	lw $ra, 4($sp)		# restore the return address
-	addi $sp, $sp, 8 	# adjust stack pointer to pop 2 items
-
-	mul $v0,$a0,$v0		# return n * fact (n – 1)
-	jr $ra 			# return to the caller
-
-Sin:
-	lwc1 $f8, zeroValue         	#Load a float zero in coprocessor 1 to use it for float operations
-        addi $t5, $zero,5
-        addi $t6, $zero,6
-        addi $t7, $zero,7
-	lwc1 $f1, ToRadian          	#Load f1 with the value of PI which is 3.14
-     	mul.s $f12, $f0, $f1       		#Multiply the previous result with angle and then store it back in angle
-	add.s $f4, $f12, $f8               	#Store angle content into term variable, f4 is term 
-      	add.s $f28, $f8, $f4               	#Store term variable into lastValue, f5 is lastValue
-      	lwc1 $f21, one                  	#This represents f21: n 
-      	lwc1 $f11, one                    	#This will always represent 1
-      	addi $t0, $zero, 0               	#Ensure the register=zero so that we can use it as the loop counter, t0 is i
-              
-      	while5:                          	#While loop to calculate Taylor's Series
-        	bgt $t0, 20, exit5          	#If the value of $t0 which is the counter is bigger than 10 then it will go to Exit5 label
-           	lwc1 $f19, two
-           	mul.s $f24, $f21, $f19     	#multiply n with 2
-           	add.s $f27, $f24, $f11      #Use the previous result to add 1 
-           	mul.s $f30, $f27, $f21      	#Multiply the previous result with 2
-          	mul.s $f26, $f30, $f19     	#f26 is now the denominator
-              
-          	lwc1 $f13, negative
-           	mul.s $f18, $f4, $f13       	#Negative the term
-           	mul.s $f3, $f12, $f18       	#Multiply the term with angle
-           	mul.s $f3, $f3, $f12        	#Multiply angle ith previous result again
-           	div.s $f4, $f3, $f26        	#Divide the previous output over the denominator
-                                           
-          	add.s $f28, $f28, $f4          	#lastValue = lastValue + term;
-           	add.s $f21, $f11, $f21     	#Increments the value of n
-           	addi $t0, $t0, 1             	#Increments the value of counter
-           	j while5                     	#The flow jumps back to the while loop if the condition is fullfilled        
-        exit5:                          		#Return function result stored in $f5 which is lastValue 
+	s.s $f1, 0($sp)
+	jal hipotenusa		#Se llama a la funcion hipotenusa.
+	
+	l.s $f12, 0($sp) 	#En $f12 se guarda el valor de la hipotenusa.
+	addi $sp, $sp, 8	#pop 8 items off stack.
+	
+	la $a0,Hipo		#Se carga el contenido de la etiquta Hipo.
+	addiu $v0,$0,4          #Se imprime un string.
+        syscall			#Se ejecuta la instruccion anterior.
         
-       		jr $ra                        	#Returns to the function caller
+	addi $v0,$0, 2 		#Se muestra la entrada del float.
+	syscall			#Se ejecuta la instruccion anterior.
+	
+	mov.s $f3,$f12 		#Se mueve el valor de la hipotenusa a $f3.
+	
+	addi $sp, $sp, -12	#Se reserva espacio en la pila para la funcion arcoseno.
+	s.s $f3, 8($sp)		#Para la hipotenusa.
+	s.s $f2, 4($sp)		#Para el cateto b.
+	s.s $f1, 0($sp)		#Para el cateto a.
+	
+	jal arcsine		#Convoca la funcion arcsine
+	
+	l.s $f12, 0($sp) 	#Con l.s se guarda en $f12 el valor del angulo.
+	mov.s $f0,$f12		#Se mueve a $f0 el valor del angulo.
+	addi $sp, $sp, 12	#pop 12 items off stack.
+	
+	la $a0,Arco_sine	#Se carga el contenido en la etiqueta Arco_sine.
+	addiu $v0,$0,4          #Imprime el string.
+        syscall			#Ejecuta la instruccion anterior.
 
-Cos:
-	#All of these are initial values to calculate the equations
-	lwc1 $f31, one 			# this is the counter 
-	lwc1 $f1, one
-	lwc1 $f2, two
-	lwc1 $f3, ToRadian		#The value of (PI/180) which is 0.01745
-	lwc1 $f8, negative			#The value -1
-	lwc1 $f9, one
-	lwc1 $f11, one			# $f11 has the sum (Result)
-	lwc1 $f14, check			#the number of iterations
+	addi $v0,$0, 2 		#Se muestra la entrada del float.
+	syscall			#Ejecuta la instruccion anterior.
 	
-	mul.s $f4, $f0, $f3			#convert the degree to radian
-	 
-	loop6:
-		mul.s $f5, $f4, $f4		#(x*x)
-	
-		#(2*i-1)
-		mul.s $f6, $f31, $f2		
-		sub.s $f6, $f6, $f1
-	
-		mul.s $f7, $f31, $f2 	#(2*i)
-	
-		# collecting them together to put them in R ($f5)
-		div.s $f5, $f5, $f6		
-		div.s $f5, $f5, $f7		
-		mul.s $f5, $f5, $f8		# put the negative sign 
-	
-		mul.s $f10, $f5, $f9		# t1 = R * t0  ($f10 = t1)
-		add.s $f11, $f11, $f10	# sum = sum+t1
-		mov.s $f9, $f10		# t0 = t1
-		add.s $f31, $f31, $f1	# counter++
-		c.eq.s $f31, $f14		# is i = 10
-		bc1t exit6			# if the previous condition is true branch to exit label
-		j loop6			# if the condition is false loop again from the (loop) label
-	
-	exit6:
-		jr $ra
 
-Error:							      #Aqui se termina el programa porque se escribio un cateto igual a 0.
-	addiu $v0,$0,10       						#Final del main para evitar recursión.
-        syscall	
+	addi $sp, $sp, -4	#Se ajusta la pila para 4 items. Para convocar la funcion sine.
+	s.s $f0, 0($sp)		#Reserva para el contenido del angulo.
+	jal sine		#Convoca a la funcion sine.
+	l.s $f12, 0($sp) 	#Se guarda el valor obtenido en $f12.
+	addi $sp, $sp, 4	#pop 4 items off stack.
+	
+	
+	la $a0,Sine		#Se carga el contenido en la etiqueta Sine.
+	addiu $v0,$0,4          #Se imprime un string.
+        syscall			#Ejecuta la instruccion anterior.
+
+	addi $v0,$0, 2 		#Se muestra la entrada del float.
+	syscall			#Ejecuta la instruccion anterior.
+
+	addi $sp, $sp, -4	#Se ajusta la pila para 2 items. Esta reserva en la pila es para convocar la funcion cos.
+	s.s $f0, 0($sp)		#Reserva para el contenido del angulo.
+	jal cosine		#Convoca a la funcion cos.
+	
+	l.s $f12, 0($sp) 	#Se guarda en $f12 el resultado del coseno del triangulo.
+	addi $sp, $sp, 4	#pop 4 items off stack.
+	
+	la $a0,Cosine		#Se carga el contenido en la etiqueta Cosine.
+	addiu $v0,$0,4          #Imprime un string.
+        syscall			#Ejecuta la instruccion anterior.
+
+	addi $v0,$0, 2 		#Se muestra la entrada del float.
+	syscall			#Ejecuta la instruccion anterior.
+	
+	j main			#Salto al main, hacer esto permite que el programa este solicitando catetos constantemente.
+	
+hipotenusa:
+	addi $sp,$sp, -16	#Se ajusta la pila para 16 items.
+	s.s $f3, 12($sp)	#Reserva para la hipotenusa.
+	s.s $f2, 8($sp)		#Reserva para el cateto b.
+	s.s $f1, 4($sp)		#Reserva para el cateto a.
+	s.s $f0, 0($sp)		#Reserva para la suma de a^2 y b^2.
+	l.s $f2, 20($sp)	#Se carga el valor del cateto b.
+	l.s $f1, 16($sp)	#Se carga el valor del cateto a.
+	mul.s $f1,$f1,$f1 	#$f1 = a^2
+	mul.s $f2,$f2,$f2 	#$f1 = b^2
+	add.s $f0,$f1,$f2 	#$f0 = a^2+b^2
+	add.s $f3,$f1,$f2 	#$f3 = x.
+	addi $t0, $0, 2		#Se carga un 2 en $t0.
+	mtc1 $t0, $f2		#Se hace la transformacion de registro entero a flotante.
+	cvt.s.w $f2, $f2 	#Convierte un valor entero en un registro punto flotante en un valor en punto flotante.
+	div.s $f0,$f0,$f2 	# N = N/2, valor inicial.	
+	addi $t0, $0, 20 	#Cantidad de iteraciones.
+
+Loop_raiz:			#loop raiz usado en clase con la funcion cuadratica.s
+	div.s $f1,$f3,$f0 	#$f1 = N/x
+	add.s $f0,$f1,$f0 	#$f0 = x+N/x
+	div.s $f0,$f0,$f2 	#$f0 = (x+N/x)/2
+	beq $t0, $zero, retRaiz #$t0=1 si $zero = retRaiz.
+	addi $t0, $t0, -1	#Sino, se decrementa.
+	j Loop_raiz		#Salta al Loop_raiz para seguir con la iteracion.
+	
+retRaiz:			#Retorno del valor de la raiz.
+	s.s $f0, 16($sp)
+	l.s $f3, 12($sp)
+	l.s $f2, 8($sp)
+	l.s $f1, 4($sp)
+	l.s $f0, 0($sp)
+	addi $sp,$sp, 16	#pop 16 items off stack.
+	jr $ra			#Devuelve el control a funcion hipotenusa.
+
+fact:				#Esta funcion es la misma que se uso en clase.
+	addi $sp, $sp, -8	#Se ajusta la pila para 8 items.
+	sw $ra, 4($sp)		#Se guarda el registo $ra.
+	sw $a0, 0($sp)		#Se guarda el dato almacenado en $a0.
+	
+	slti $t0,$a0,1		#Prueba para n < 1.
+	beq $t0,$zero,L1	#Si n >= 1, go to L1.
+	
+	addi $v0,$zero,1	# Regresa 1.
+	addi $sp,$sp,8		# pop 2 items off stack.
+	jr $ra			#Regresa al llamado.
+L1:
+	addi $a0,$a0,-1		# n >= 1: argument gets (n – 1).
+	jal fact		#Llama factorial con (n –1).
+	
+	lw $a0, 0($sp)		#Regresa de jal: restaura n.
+	lw $ra, 4($sp)		#Regresa la direccion .
+	addi $sp,$sp,8		#pop 8 items off stack.
+	
+	mul $v0,$a0,$v0		#Regresa n*fact(n-1).
+	jr $ra			#Regresa al llamado.
+
+arcsine: 
+	addi $sp,$sp, -24	#Se ajusta la pila para 24 items, esta reserva es para la funcion arcseno.
+	sw $ra, 20($sp)		
+	s.s $f4, 16($sp)	#Reserva para el resultado final.
+	s.s $f3, 12($sp)	#Reserva para la hipotenusa.
+	s.s $f2, 8($sp)		#Reserva para el cateto b.
+	s.s $f1, 4($sp)		#Reserva para el cateto a.
+	s.s $f0, 0($sp)		
+	l.s $f1, 24($sp)	#Se carga el valor del cateto a.
+	l.s $f2, 28($sp)	#Se carga el valor de cateto b.
+	l.s $f3, 32($sp)	#Se carga el valor de la hipotenusa.
+	c.lt.s $f1,$f2		#Si a < b implica que d=b.
+	div.s $f0, $f2, $f3 	#$f0 = b/c
+	div.s $f0, $f1,$f3	#Sino, $f0 = a/c.
+	ori $t0, $zero, 0 	#Iterador n.
+	addi $sp,$sp,-4		#Se ajusta la pila para 4 items.
+	sw $t0,0($sp)		#Aqui se guarda el valor del iterador.
+
+loop_arcsine:			#Loop del arcsine.
+	beq $t0,5,end		#Se configuran los limites para que la sumatoria se detenga. Hecho eso, se salta a la etiqueta end para hacer pop a la pila.
+	addiu $t1,$zero,2	#$t1 = 2
+	add $t1,$t0,$t0 	#$t1 = n+n = 2n.
+	add $a0,$zero,$t1	#Se carga en $a0 el valor $t1.
+	jal fact		#Aqui se tiene: $t1= (2n)!
+	mtc1 $v0, $f1 		#De registro entero a flotante. Se guarda 2n! en $v0.
+	cvt.s.w $f1, $f1  	#f1=(2n)! de valor entero a valor punto flotante.
+	ori $a0,$zero,4 	#$t1 = 4.
+	lw $a1,0($sp)		#Se carga $a1 para poder elevar 4^n. Es decir, $a1=n.
+	jal exp			#Se convoca la funcion exp.
+	mtc1 $v1, $f2 		#De registro entero a flotante.
+	cvt.s.w $f2, $f2  	#$f2=4^n se convierte un valor entero a punto flotante.
+	lw $a0,0($sp)		#$a0 = n.
+	jal fact		#Aqui se tiene (n)!.
+	mtc1 $v0, $f3		#Se transfiere un valor de un registro entero a uno flotante.
+	cvt.s.w $f3, $f3  	#$f3 = (n!). Convierte un valor entero en un registro punto flotante en un valor en punto flotante.
+	mul.s $f3,$f3,$f3	#$f3 = (n!)^2.
+	mul.s $f3,$f3,$f2	#Se hace el producto de 4^n * (n!)^2. Por tanto, $f3 = 4^n * (n!)^2.
+	lw $t0,0($sp)		#Se carga n.
+	add $t1, $t0,$t0	#Aqui se crea 2n+1. $t1= 2n.
+	addiu $t1,$t1,1		#$t1 = 2n+1
+	mtc1 $t1, $f2 		#Se transfiere un valor de un registro entero a uno flotante.
+	cvt.s.w $f2, $f2  	#$f2=(2n+1). De un valor entero en un registro punto flotante en un valor en punto flotante.
+	mul.s $f3,$f3,$f2	#$f3  =	4^n * (n!)^2 * (2n+1).
+	div.s $f1,$f1,$f3	#Se hace la division: 2n!/4^n * (n!)^2 * (2n+1).Por tanto, $f1 = (2n)!/(4^n*(n!)^2*(2n+1)) 
+	ori $a1,$t1,0		#$a1= $t1
+	addi $sp,$sp,-4		#Se ajusta la pila para 4 items. La idea es crear x^(2n+1).
+	s.s $f0,0($sp)		#Guarda en $f0 el resultado para la potencia.
+	jal Pot			#Convoca la funcion Pot.
+	l.s $f2,0($sp)		#Se carga el valor de $f2.
+	addi $sp,$sp,4		#pop 4 itmes off stack.
+	mul.s $f1,$f1,$f2	#Aqui se obtiene la expresion completa del arcoseno. $f1 = (2n)! * x^(2n+1) /(4^n (n!)^2 (2n+1)).
+	add.s $f4,$f1,$f4	#En f4 se guarda el resultado del angulo.
+	lw $t0,($sp)		#Se carga el iterador n.
+	addi $t0,$t0,1		#n++.
+	sw $t0,0($sp)		#Se van guardan las iteraciones y mostrar la ultima.
+	
+	j loop_arcsine		#Salta al loop_arcsine.
+
+end:				#etiqueta final una vez que terminen las iteraciones se hace pop a la pila.
+	addi $sp,$sp,4
+	s.s $f4, 24($sp)
+	lw $ra, 20($sp)
+	l.s $f4, 16($sp)
+	l.s $f3, 12($sp)
+	l.s $f2, 8($sp)
+	l.s $f1, 4($sp)
+	l.s $f0, 0($sp)
+	addi $sp,$sp, 24
+	jr $ra		      #Retorno de control a la funcion principal.
+
+sine:			     #Lo que se hace a continuacion es la reserva en  la pila para poder ejecutar la funcion sine junto con el junto con loop_sine.
+	addi $sp,$sp, -24    #Se ajusta la pila para 24 items.
+	sw $ra, 20($sp)
+	s.s $f4, 16($sp)
+	s.s $f3, 12($sp)
+	s.s $f2, 8($sp)
+	s.s $f1, 4($sp)
+	s.s $f0, 0($sp)
+	l.s $f0, 24($sp)     #Se carga el valor del angulo.
+	addi $t0, $zero, 0 	#Iterador n.
+	addi $sp,$sp,-4		#Reserva de 4 items.
+	sw $t0,0($sp)		#Se carga el iterador.
+
+loop_sine:			#En este loop se hacen las iteraciones de la funcion seno.
+	beq $t0,5,return_sine	#Cuando el iterador llega a 5 se hace una pausa y se pasa a la etiqueta return_sine.
+	add $t1, $t0, $t0	#$t1 = 2n. La idea es obtener la expresion:(2n+1)!.
+	addiu $t1,$t1,1		#$t1 = 2n+1.
+	add $a0,$t1,$zero	#Se carga en $a0 el valor de 2n+1.
+	jal fact		#Convoc la funcion fact.
+	mtc1 $v0, $f2 		#Se transfiere un valor de un registro entero a uno flotante.
+	cvt.s.w $f2, $f2  	#$f2=(2n+1)! Convierte un valor entero en un registro punto flotante en un valor en punto flotante.
+	addi $a1,$t1,0		#$a1= $t1, la idea es obtener la expresion: x^(2n+1).
+	addi $sp,$sp,-4		#Reserva de 4 items en la pila.
+	s.s $f0,0($sp)		#Se guarda el valor $f0.
+	jal Pot			#Convoca la funcion Pot.
+	l.s $f3,0($sp)		#Se carga el valor $f3.
+	addi $sp,$sp,4		#pop 4 items off stack.
+	div.s $f3,$f3,$f2	#$f3 = x^(2n+1)/(2n+1)!.
+	
+	#Se calcula (-1)^n
+	addi $t3, $zero, -1	#$t3 = -1.
+	lw $a1,0($sp)		#Se carga n para poder elevar $t3 a la n.
+	jal exp			#Se convoca la funcion exp.
+	mtc1 $v1, $f2 		# De registro entero a flotante.
+	cvt.s.w $f2, $f2  	# $f2=-1^n,se convierte un valor entero a punto flotante.
+	mul.s $f3,$f3,$f2	#Aqui se calcula toda la expresion, por lo que $f3 = (-1)^n * x^(2n+1) / (2n+1)! 
+	add.s $f4,$f3,$f4	#En $f4 se guarda el resultado del angulo.
+	lw $t0,($sp)		#Se carga el iterador
+	addi $t0,$t0,1		#n++.
+	sw $t0,0($sp)		#Se va guardando cada resultado para mostrar el ultimo que se obtiene para el limite establecido en la iteracion.
+	
+	j loop_sine		#Salta al loop_sine e ir sumando cada valor
+
+return_sine:			#Aqui se regresan todos los espacios que se tomaron de memoria.
+	addi $sp,$sp,4
+	s.s $f4, 24($sp)
+	lw $ra, 20($sp)
+	l.s $f4, 16($sp)
+	l.s $f3, 12($sp)
+	l.s $f2, 8($sp)
+	l.s $f1, 4($sp)
+	l.s $f0, 0($sp)	
+	addi $sp,$sp, 24
+	jr $ra			#Retorna el control a la funcion principal.
+
+cosine:				#Esta funcion es muy similar al contenido en la etiqueta sine, lo que se hizo fue quitar un uno en las expresiones x^(2n+1) y en (2n+1) de dicha etiqueta.
+	addi $sp,$sp, -24	#Se ajusta la pila para 24 items.
+	sw $ra, 20($sp)
+	s.s $f4, 16($sp)
+	s.s $f3, 12($sp)
+	s.s $f2, 8($sp)
+	s.s $f1, 4($sp)
+	s.s $f0, 0($sp)		
+	l.s $f0, 24($sp)	#Se carga el valor del angulo.
+	addi $t0, $zero, 1	#iterador n.
+	addi $sp,$sp,-4		#Se ajusta la pila para 4 items.
+	sw $t0,0($sp)		#Se carga el iterador.
+
+loop_cosine:			#En este loop se ejecuta cada sumatoria (respetando el limite de iteracion) y al final mostrara la sumatoria de cada contribucion.
+	beq $t0,5,return_cosine	#Cuando n es mayor que 5 el loop se ira a la etiqueta return_cosine.	
+	add $t1, $t0, $t0	#$t1 = 2n. El objetivo es 2n!.
+	add $a0,$t1,$zero	#Se carga en $a0 el valor de 2n.
+	jal fact		#Convoca la funcion fact.
+	mtc1 $v0, $f2 		#Se transfiere un valor de un registro entero a uno flotante
+	cvt.s.w $f2, $f2  	#$f2=(2n)! Convierte un valor entero en un registro punto flotante en un valor en punto flotante
+	addi $a1,$t1,0		#$a1= $t1, la idea es obtener x^(2n).
+	addi $sp,$sp,-4		#Se ajusta la pila para 4 items.
+	s.s $f0,0($sp)		#Se guarda el valor de $f0.
+	jal Pot			#Convoca la funcion Pot.
+	l.s $f3,0($sp)		#Se carga el valor de $f3.
+	addi $sp,$sp,4		#pop 4 items off stack.
+	div.s $f3,$f3,$f2	#$f3= x^(2n)/(2n)!
+	addi $t3, $zero, -1	#$t3 = -1.
+	lw $a1,0($sp)		#Se carga n para poder elevar $t3 a la n.
+	jal exp			#Se convoca la funcion exp.
+	mtc1 $v1, $f2 		# De registro entero a flotante.
+	cvt.s.w $f2, $f2  	# $f2=-1^n,se convierte un valor entero a punto flotante.
+	mul.s $f3,$f3,$f2	#Aqui se tiene toda la expresion del coseno, por tanto, $f3 = (-1)^n * x^(2n) / 2n!.
+	add.s $f4,$f3,$f4	#Se realiza la sumatoria correspondiente a la expresion dada en el enunciado de la tarea.
+	lw $t0,($sp)		#Se carga el iterador.
+	addi $t0,$t0,1		#n++.
+	sw $t0,0($sp)		#Se guarda el valor de cada iteracion.
+	j loop_cosine		#Se salta al loop_cosine para seguir con las sumatorias.	
+
+return_cosine:			#Aqui se regresan todos los espacios que se tomaron de memoria.
+	addi $sp,$sp,4
+	s.s $f4, 24($sp)
+	lw $ra, 20($sp)
+	l.s $f4, 16($sp)
+	l.s $f3, 12($sp)
+	l.s $f2, 8($sp)
+	l.s $f1, 4($sp)
+	l.s $f0, 0($sp)
+	addi $sp,$sp, 24
+	jr $ra			#Retorna el control a la funcion principal.
+	
+exp:				#Esta funcion permitira elevar cada expresion en los loops.
+	addi $v1,$zero,1	#$v1 =1 
+	bne $a1, $zero,Pot4	#$a1 =1 entonces se va a la etiqueta Pot4.
+	jr $ra 			#Retorno.
+	
+Pot4:				
+	beq $a1, $0, end_pot    #Si $a1=0 entonces se pasa a la etiqueta end_pot.
+	mult $a0,$v1		#Producto de $a0 y $v1.
+	mflo $v1		#Se mueve el resultado anterior del low.
+	addi $a1,$a1,-1		#$a1=-1.
+	j Pot4			#Salto a Pot4.
+	
+end_pot:			
+	jr $ra			#Retorno.
+
+Pot:				
+	addi $sp,$sp,-8		#Se ajusta la pila para 8 items.
+	s.s $f0, 4($sp)		#Reserva para $f0.
+	s.s $f1, 0($sp)		#Reserva para $f1.
+	l.s $f0, 8($sp)		#Se carga el valor de $f0.
+	mov.s $f1,$f0		#Se mueve el resultado de $f0 a $f1.
+	
+Pot1:				
+	addi $a1,$a1,-1		#$a1=-1.
+	bne $a1,$zero, pot4	#Si $a1= 0 entonces se pasa a la etiqueta pot4.
+	s.s $f0,8($sp)		#Reserva para $f0.
+	addi $v1,$zero,1	#$v1=1.
+	mtc1 $v1, $f0 		# se transfiere un valor de un registro entero a uno flotante
+	cvt.s.w $f0, $f0  	# $f1=1 Convierte un valor entero en un registro punto flotante en un valor en punto flotante
+	l.s $f0,4($sp)		#Se carga $f0.
+	l.s $f1,0($sp)		#Se carga $f1.
+	addi $sp,$sp,8		#pop 8 items off stack.
+	jr $ra 			#Retorno
+
+pot4:				
+	beq $a1,$0, endpot4	#Si $a1= 0, se pasa a endpot4.
+	mul.s $f0,$f1,$f0	#Producto de $f1 y $f0 guardado en $f0.
+	addi $a1,$a1,-1		#$a1 = -1.
+	j pot4			#Salto a la etiqueta pot4.
+	
+endpot4:			
+	s.s $f0,8($sp)		#Reserva para $f0.
+	l.s $f0,4($sp)		#Se carga $f0.
+	l.s $f1,0($sp)		#Se carga $f1.
+	addi $sp,$sp,8		#pop 8 items off stack.
+	jr $ra			#Retorno
+	
+Error:				
+	addiu $v0,$0, 10 	# Aqui se termina el programa porque se escribieron 2 catetos.
+	syscall 
